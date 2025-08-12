@@ -1,9 +1,10 @@
 package com.example.demo.repository;
 
 import com.example.demo.entity.Task;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import com.example.demo.entity.TaskStatus;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import reactor.core.publisher.Flux;
 
-public interface TaskRepository extends ReactiveCrudRepository<Task, String> {  
-    Flux<Task> findAllByStatus(String status); 
+public interface TaskRepository extends ReactiveMongoRepository<Task, String> {
+    Flux<Task> findAllByStatus(TaskStatus status);
 }

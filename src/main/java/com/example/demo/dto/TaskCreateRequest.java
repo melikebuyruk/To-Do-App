@@ -3,8 +3,7 @@ package com.example.demo.dto;
 public class TaskCreateRequest {
   private String title;
   private String description;
-  private String status; // opsiyonel, default TODO
-
+  private String status;
   public String getTitle() { return title; }
   public void setTitle(String title) { this.title = title; }
   public String getDescription() { return description; }

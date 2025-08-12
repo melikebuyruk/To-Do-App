@@ -4,7 +4,7 @@ import com.example.demo.dto.TaskCreateRequest;
 import com.example.demo.dto.TaskDto;
 import com.example.demo.dto.TaskUpdateRequest;
 import com.example.demo.entity.Task;
-import com.example.demo.entity.TaskStatus;   // <-- ÖNEMLİ
+import com.example.demo.entity.TaskStatus;
 import com.example.demo.mapper.TaskMapper;
 import com.example.demo.repository.TaskRepository;
 import org.springframework.stereotype.Service;
@@ -39,7 +39,6 @@ public class TaskService {
     Task t = new Task();
     t.setTitle(req.getTitle());
     t.setDescription(req.getDescription());
-    // String -> Enum
     t.setStatus(parseStatusOrDefault(req.getStatus(), TaskStatus.TODO));
     t.setCreationDate(LocalDateTime.now());
     return repo.save(t).map(TaskMapper::toDto);
@@ -65,14 +64,11 @@ public class TaskService {
         .flatMap(repo::delete);
   }
 
-  /** "todo", "In_Progress" vb. değerleri güvenle TaskStatus'a çevirir. Boş/null ise default döner. */
   private static TaskStatus parseStatusOrDefault(String raw, TaskStatus def) {
     if (raw == null || raw.isBlank()) return def;
     try {
       return TaskStatus.valueOf(raw.trim().toUpperCase());
     } catch (IllegalArgumentException ex) {
-      // İstersen burada özel hata fırlatabilirsin:
-      // throw new IllegalArgumentException("Invalid status: " + raw + " (allowed: TODO, IN_PROGRESS, DONE)");
       return def;
     }
   }

@@ -12,7 +12,7 @@ public final class TaskMapper {
     dto.setTitle(t.getTitle());
     dto.setDescription(t.getDescription());
     dto.setCreationDate(t.getCreationDate());
-    dto.setStatus(t.getStatus() != null ? t.getStatus().name() : null); // <-- önemli
+    dto.setStatus(t.getStatus() != null ? t.getStatus().name() : null);
     return dto;
   }
 }
