@@ -4,72 +4,71 @@ import com.example.demo.dto.TaskCreateRequest;
 import com.example.demo.dto.TaskDto;
 import com.example.demo.dto.TaskUpdateRequest;
 import com.example.demo.entity.Task;
-import com.example.demo.entity.TaskStatus;
 import com.example.demo.mapper.TaskMapper;
 import com.example.demo.repository.TaskRepository;
+import com.example.demo.repository.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.LocalDateTime;
-
 @Service
 public class TaskService {
+    private final TaskRepository tasks;
+    private final UserRepository users;
+    private final TaskMapper mapper;
 
-  private final TaskRepository repo;
-
-  public TaskService(TaskRepository repo) {
-    this.repo = repo;
-  }
-
-  public Flux<TaskDto> getAll() {
-    return repo.findAll().map(TaskMapper::toDto);
-  }
-
-  public Mono<TaskDto> getById(String id) {
-    return repo.findById(id)
-        .switchIfEmpty(Mono.error(new IllegalArgumentException("Task not found")))
-        .map(TaskMapper::toDto);
-  }
-
-  public Mono<TaskDto> create(TaskCreateRequest req) {
-    if (req.getTitle() == null || req.getTitle().isBlank()) {
-      return Mono.error(new IllegalArgumentException("title is required"));
+    public TaskService(TaskRepository tasks, UserRepository users, TaskMapper mapper) {
+        this.tasks = tasks;
+        this.users = users;
+        this.mapper = mapper;
     }
-    Task t = new Task();
-    t.setTitle(req.getTitle());
-    t.setDescription(req.getDescription());
-    t.setStatus(parseStatusOrDefault(req.getStatus(), TaskStatus.TODO));
-    t.setCreationDate(LocalDateTime.now());
-    return repo.save(t).map(TaskMapper::toDto);
-  }
 
-  public Mono<TaskDto> update(String id, TaskUpdateRequest req) {
-    return repo.findById(id)
-        .switchIfEmpty(Mono.error(new IllegalArgumentException("Task not found")))
-        .flatMap(existing -> {
-          if (req.getTitle() != null) existing.setTitle(req.getTitle());
-          if (req.getDescription() != null) existing.setDescription(req.getDescription());
-          if (req.getStatus() != null) {
-            existing.setStatus(parseStatusOrDefault(req.getStatus(), existing.getStatus()));
-          }
-          return repo.save(existing);
-        })
-        .map(TaskMapper::toDto);
-  }
-
-  public Mono<Void> delete(String id) {
-    return repo.findById(id)
-        .switchIfEmpty(Mono.error(new IllegalArgumentException("Task not found")))
-        .flatMap(repo::delete);
-  }
-
-  private static TaskStatus parseStatusOrDefault(String raw, TaskStatus def) {
-    if (raw == null || raw.isBlank()) return def;
-    try {
-      return TaskStatus.valueOf(raw.trim().toUpperCase());
-    } catch (IllegalArgumentException ex) {
-      return def;
+    public Flux<TaskDto> list() {
+        return tasks.findAll().map(mapper::toDto);
     }
-  }
+
+    public Mono<TaskDto> get(String id) {
+        return tasks.findById(id)
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
+                .map(mapper::toDto);
+    }
+
+    public Mono<TaskDto> create(TaskCreateRequest req) {
+        Task t = mapper.fromCreate(req);
+        return tasks.save(t).map(mapper::toDto);
+    }
+
+    public Mono<TaskDto> update(String id, TaskUpdateRequest req) {
+        return tasks.findById(id)
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
+                .flatMap(t -> tasks.save(mapper.merge(t, req)))
+                .map(mapper::toDto);
+    }
+
+    public Mono<Void> delete(String id) {
+        return tasks.findById(id)
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
+                .flatMap(tasks::delete);
+    }
+
+    public Mono<TaskDto> assign(String taskId, String assigneeId) {
+        if (assigneeId == null || assigneeId.isBlank())
+            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST));
+        return users.existsById(assigneeId)
+                .filter(Boolean::booleanValue)
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "user")))
+                .then(tasks.findById(taskId)
+                        .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "task"))))
+                .flatMap(t -> { t.setAssigneeId(assigneeId); return tasks.save(t); })
+                .map(mapper::toDto);
+    }
+
+    public Mono<TaskDto> unassign(String taskId) {
+        return tasks.findById(taskId)
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
+                .flatMap(t -> { t.setAssigneeId(null); return tasks.save(t); })
+                .map(mapper::toDto);
+    }
 }

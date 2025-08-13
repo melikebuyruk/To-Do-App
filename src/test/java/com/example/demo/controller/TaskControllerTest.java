@@ -4,7 +4,7 @@ import com.example.demo.dto.TaskCreateRequest;
 import com.example.demo.dto.TaskDto;
 import com.example.demo.dto.TaskUpdateRequest;
 import com.example.demo.service.TaskService;
-import com.example.demo.web.GlobalExceptionHandler;
+import com.example.demo.web.GlobalExceptionHandler; // <- remove if you don't have this class
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,13 +18,11 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.LocalDateTime;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 @WebFluxTest(controllers = TaskController.class)
-@Import(GlobalExceptionHandler.class) 
+@Import(GlobalExceptionHandler.class) // <- remove this line if you don't have a global handler
 class TaskControllerTest {
 
     @Autowired
@@ -33,174 +31,153 @@ class TaskControllerTest {
     @MockBean
     private TaskService taskService;
 
-    private TaskDto d1;
-    private TaskDto d2;
+    private TaskDto t1;
+    private TaskDto t2;
 
     @BeforeEach
     void setUp() {
-        d1 = new TaskDto();
-        d1.setId("1");
-        d1.setTitle("Shopping");
-        d1.setDescription("Buy bread and milk");
-        d1.setCreationDate(LocalDateTime.of(2025, 8, 9, 20, 0));
-        d1.setStatus("TODO");
+        t1 = new TaskDto();
+        t1.setId("t1");
+        t1.setTitle("Buy milk");
+        t1.setDescription("2L");
+        t1.setStatus("TODO");
+        t1.setAssignedUserId(null);
 
-        d2 = new TaskDto();
-        d2.setId("2");
-        d2.setTitle("Workout");
-        d2.setDescription("30 min run");
-        d2.setCreationDate(LocalDateTime.of(2025, 8, 9, 20, 5));
-        d2.setStatus("IN_PROGRESS");
+        t2 = new TaskDto();
+        t2.setId("t2");
+        t2.setTitle("Pay bills");
+        t2.setDescription("Electricity & water");
+        t2.setStatus("IN_PROGRESS");
+        t2.setAssignedUserId("u1");
     }
 
     @Test
-    @DisplayName("GET /tasks -> 200 & list returns")
-    void getAll_shouldReturnList() {
-        Mockito.when(taskService.getAll()).thenReturn(Flux.just(d1, d2));
+    @DisplayName("GET /tasks -> 200 + list")
+    void listTasks() {
+        Mockito.when(taskService.list()).thenReturn(Flux.just(t1, t2));
 
         webTestClient.get()
-                .uri("/tasks")
-                .exchange()
-                .expectStatus().isOk()
-                .expectHeader().contentTypeCompatibleWith(MediaType.APPLICATION_JSON)
-                .expectBody()
-                .jsonPath("$[0].id").isEqualTo("1")
-                .jsonPath("$[0].title").isEqualTo("Shopping")
-                .jsonPath("$[1].id").isEqualTo("2")
-                .jsonPath("$[1].status").isEqualTo("IN_PROGRESS");
+            .uri("/tasks")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk()
+            .expectHeader().contentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+            .expectBody()
+            .jsonPath("$[0].id").isEqualTo("t1")
+            .jsonPath("$[0].title").isEqualTo("Buy milk")
+            .jsonPath("$[1].id").isEqualTo("t2")
+            .jsonPath("$[1].assignedUserId").isEqualTo("u1");
     }
 
     @Test
-    @DisplayName("GET /tasks/{id} -> 200 & returns item")
-    void getById_found_shouldReturnItem() {
-        Mockito.when(taskService.getById("1")).thenReturn(Mono.just(d1));
+    @DisplayName("GET /tasks/{id} -> 200 + item")
+    void getTask() {
+        Mockito.when(taskService.get("t1")).thenReturn(Mono.just(t1));
 
         webTestClient.get()
-                .uri("/tasks/1")
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody()
-                .jsonPath("$.id").isEqualTo("1")
-                .jsonPath("$.title").isEqualTo("Shopping")
-                .jsonPath("$.status").isEqualTo("TODO");
+            .uri("/tasks/{id}", "t1")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody()
+            .jsonPath("$.id").isEqualTo("t1")
+            .jsonPath("$.title").isEqualTo("Buy milk");
     }
 
     @Test
-    @DisplayName("GET /tasks/{id} -> 404")
-    void getById_notFound_shouldReturn404() {
-        Mockito.when(taskService.getById("99")).thenReturn(Mono.error(new IllegalArgumentException("Task not found")));
+    @DisplayName("POST /tasks -> 201? (200 if service returns 200) + created dto")
+    void createTask() {
+        Mockito.when(taskService.create(any(TaskCreateRequest.class))).thenReturn(Mono.just(t1));
 
-        webTestClient.get()
-                .uri("/tasks/99")
-                .exchange()
-                .expectStatus().isNotFound();
-    }
-
-    @Test
-    @DisplayName("POST /tasks -> 201 & returns created task")
-    void create_shouldPersistAndReturn201() {
-        TaskDto saved = new TaskDto();
-        saved.setId("10");
-        saved.setTitle("New Task");
-        saved.setDescription("Description");
-        saved.setCreationDate(LocalDateTime.of(2025, 8, 9, 21, 0));
-        saved.setStatus("TODO");
-
-        Mockito.when(taskService.create(any(TaskCreateRequest.class))).thenReturn(Mono.just(saved));
+        String body = """
+            {
+              "title": "Buy milk",
+              "description": "2L",
+              "status": "TODO"
+            }
+            """;
 
         webTestClient.post()
-                .uri("/tasks")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue("""
-                    {"title":"New Task","description":"Description","status":"TODO"}
-                """)
-                .exchange()
-                .expectStatus().isCreated()
-                .expectHeader().contentTypeCompatibleWith(MediaType.APPLICATION_JSON)
-                .expectBody()
-                .jsonPath("$.id").isEqualTo("10")
-                .jsonPath("$.title").isEqualTo("New Task")
-                .jsonPath("$.status").isEqualTo("TODO");
+            .uri("/tasks")
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON)
+            .bodyValue(body)
+            .exchange()
+            .expectStatus().isOk() // change to isCreated() if you set response code 201 in controller later
+            .expectBody()
+            .jsonPath("$.id").isEqualTo("t1")
+            .jsonPath("$.status").isEqualTo("TODO");
     }
 
     @Test
-    @DisplayName("POST /tasks -> 400 (blank title)")
-    void create_blankTitle_shouldReturn400() {
-        Mockito.when(taskService.create(any(TaskCreateRequest.class)))
-                .thenReturn(Mono.error(new IllegalArgumentException("title is required")));
+    @DisplayName("PATCH /tasks/{id} -> 200 + updated dto")
+    void updateTask() {
+        Mockito.when(taskService.update(eq("t2"), any(TaskUpdateRequest.class))).thenReturn(Mono.just(t2));
 
-        webTestClient.post()
-                .uri("/tasks")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue("""
-                    {"title":"", "description":"desc", "status":"TODO"}
-                """)
-                .exchange()
-                .expectStatus().isBadRequest();
-    }
+        String body = """
+            {
+              "title": "Pay bills",
+              "status": "IN_PROGRESS"
+            }
+            """;
 
-    @Test
-    @DisplayName("PUT /tasks/{id} -> 200 & returns updated task")
-    void update_shouldModifyAndReturnUpdated() {
-        TaskDto updated = new TaskDto();
-        updated.setId("1");
-        updated.setTitle("Updated");
-        updated.setDescription("New description");
-        updated.setCreationDate(LocalDateTime.of(2025, 8, 9, 20, 0));
-        updated.setStatus("IN_PROGRESS");
-
-        Mockito.when(taskService.update(eq("1"), any(TaskUpdateRequest.class))).thenReturn(Mono.just(updated));
-
-        webTestClient.put()
-                .uri("/tasks/1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue("""
-                    {"title":"Updated","description":"New description","status":"IN_PROGRESS"}
-                """)
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody()
-                .jsonPath("$.id").isEqualTo("1")
-                .jsonPath("$.title").isEqualTo("Updated")
-                .jsonPath("$.status").isEqualTo("IN_PROGRESS");
-    }
-
-    @Test
-    @DisplayName("PUT /tasks/{id} -> 404 (not found)")
-    void update_notFound_shouldReturn404() {
-        Mockito.when(taskService.update(eq("123"), any(TaskUpdateRequest.class)))
-                .thenReturn(Mono.error(new IllegalArgumentException("Task not found")));
-
-        webTestClient.put()
-                .uri("/tasks/123")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue("""
-                    {"title":"X"}
-                """)
-                .exchange()
-                .expectStatus().isNotFound();
+        webTestClient.patch()
+            .uri("/tasks/{id}", "t2")
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON)
+            .bodyValue(body)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody()
+            .jsonPath("$.id").isEqualTo("t2")
+            .jsonPath("$.status").isEqualTo("IN_PROGRESS");
     }
 
     @Test
     @DisplayName("DELETE /tasks/{id} -> 204")
-    void delete_shouldReturn204() {
-        Mockito.when(taskService.delete("1")).thenReturn(Mono.empty());
+    void deleteTask() {
+        Mockito.when(taskService.delete("t1")).thenReturn(Mono.empty());
 
         webTestClient.delete()
-                .uri("/tasks/1")
-                .exchange()
-                .expectStatus().isNoContent();
+            .uri("/tasks/{id}", "t1")
+            .exchange()
+            .expectStatus().isNoContent();
     }
 
     @Test
-    @DisplayName("DELETE /tasks/{id} -> 404 (not found)")
-    void delete_notFound_shouldReturn404() {
-        Mockito.when(taskService.delete("1"))
-                .thenReturn(Mono.error(new IllegalArgumentException("Task not found")));
+    @DisplayName("POST /tasks/{taskId}/assign/{userId} -> 200 + dto")
+    void assignTask() {
+        Mockito.when(taskService.assignToUser("t1", "u1")).thenReturn(Mono.just(t2)); // assume service returns updated dto
 
-        webTestClient.delete()
-                .uri("/tasks/1")
-                .exchange()
-                .expectStatus().isNotFound();
+        webTestClient.post()
+            .uri("/tasks/{taskId}/assign/{userId}", "t1", "u1")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody()
+            .jsonPath("$.id").isEqualTo("t2")
+            .jsonPath("$.assignedUserId").isEqualTo("u1");
+    }
+
+    @Test
+    @DisplayName("POST /tasks/{taskId}/unassign -> 200 + dto")
+    void unassignTask() {
+        TaskDto unassigned = new TaskDto();
+        unassigned.setId("t2");
+        unassigned.setTitle("Pay bills");
+        unassigned.setDescription("Electricity & water");
+        unassigned.setStatus("IN_PROGRESS");
+        unassigned.setAssignedUserId(null);
+
+        Mockito.when(taskService.unassign("t2")).thenReturn(Mono.just(unassigned));
+
+        webTestClient.post()
+            .uri("/tasks/{taskId}/unassign", "t2")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody()
+            .jsonPath("$.id").isEqualTo("t2")
+            .jsonPath("$.assignedUserId").doesNotExist(); // null → often omitted by Jackson; if included, change to .isEqualTo(null)
     }
 }

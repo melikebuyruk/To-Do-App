@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.AssigneeRequest;
 import com.example.demo.dto.TaskCreateRequest;
 import com.example.demo.dto.TaskDto;
 import com.example.demo.dto.TaskUpdateRequest;
@@ -7,192 +8,71 @@ import com.example.demo.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping(value = "/tasks", produces = MediaType.APPLICATION_JSON_VALUE)
 public class TaskController {
-
     private final TaskService service;
+    public TaskController(TaskService service) { this.service = service; }
 
-    public TaskController(TaskService service) {
-        this.service = service;
-    }
-
-    @Operation(
-        summary = "List all tasks",
-        description = "Returns all tasks."
-    )
-    @ApiResponse(
-        responseCode = "200",
-        description = "Tasks retrieved",
-        content = @Content(
-            mediaType = "application/json",
-            schema = @Schema(implementation = TaskDto.class),
-            examples = @ExampleObject(name = "Simple list", value = """
-                [
-                  {
-                    "id": "1",
-                    "title": "Buy groceries",
-                    "description": "Bread and milk",
-                    "creationDate": "2025-08-11T14:30:00",
-                    "status": "TODO"
-                  },
-                  {
-                    "id": "2",
-                    "title": "Workout",
-                    "description": "30 min run",
-                    "creationDate": "2025-08-11T15:00:00",
-                    "status": "IN_PROGRESS"
-                  }
-                ]
-                """)
-        )
-    )
+    @Operation(summary = "List tasks")
     @GetMapping
-    public Flux<TaskDto> getAll() {
-        return service.getAll();
-    }
+    public Flux<TaskDto> list() { return service.list(); }
 
-    @Operation(
-        summary = "Get task by ID",
-        description = "Returns a single task by its ID."
-    )
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "Task found",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = TaskDto.class),
-                examples = @ExampleObject(name = "Simple item", value = """
-                    {
-                      "id": "1",
-                      "title": "Buy groceries",
-                      "description": "Bread and milk",
-                      "creationDate": "2025-08-11T14:30:00",
-                      "status": "TODO"
-                    }
-                    """)
-            )
-        ),
-        @ApiResponse(responseCode = "404", description = "Task not found")
-    })
+    @Operation(summary = "Get task by id")
     @GetMapping("/{id}")
-    public Mono<TaskDto> getById(@PathVariable String id) {
-        return service.getById(id)
-            .onErrorResume(IllegalArgumentException.class,
-                e -> Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found")));
-    }
+    public Mono<TaskDto> get(@PathVariable String id) { return service.get(id); }
 
-    @Operation(
-        summary = "Create a new task",
-        description = "Creates a task from the given data."
-    )
-    @ApiResponse(
-        responseCode = "201",
-        description = "Task created",
-        content = @Content(
-            mediaType = "application/json",
-            schema = @Schema(implementation = TaskDto.class),
-            examples = @ExampleObject(name = "Created response", value = """
-                {
-                  "id": "10",
-                  "title": "Prepare slides",
-                  "description": "Finish the deck",
-                  "creationDate": "2025-08-11T16:45:00",
-                  "status": "TODO"
-                }
-                """)
-        )
-    )
+    @Operation(summary = "Create task")
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseStatus(HttpStatus.CREATED)
-    @RequestBody(
-        required = true,
-        content = @Content(
-            mediaType = "application/json",
-            schema = @Schema(implementation = TaskCreateRequest.class),
-            examples = @ExampleObject(name = "Simple request", value = """
-                {
-                  "title": "Prepare slides",
-                  "description": "Finish the deck",
-                  "status": "TODO"
-                }
+    public Mono<TaskDto> create(
+        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                examples = @ExampleObject(value = """
+                { "title":"Rapor", "description":"Q3", "status":"OPEN", "assigneeId":"u-101" }
                 """)
-        )
-    )
-    public Mono<TaskDto> create(@org.springframework.web.bind.annotation.RequestBody TaskCreateRequest req) {
-        return service.create(req);
-    }
-
-    @Operation(
-        summary = "Update a task",
-        description = "Updates an existing task."
-    )
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "Task updated",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = TaskDto.class),
-                examples = @ExampleObject(name = "Updated response", value = """
-                    {
-                      "id": "1",
-                      "title": "Buy groceries (updated)",
-                      "description": "Bread, milk, eggs",
-                      "creationDate": "2025-08-11T14:30:00",
-                      "status": "IN_PROGRESS"
-                    }
-                    """)
             )
-        ),
-        @ApiResponse(responseCode = "404", description = "Task not found")
-    })
-    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @RequestBody(
-        required = true,
-        content = @Content(
-            mediaType = "application/json",
-            schema = @Schema(implementation = TaskUpdateRequest.class),
-            examples = @ExampleObject(name = "Simple request", value = """
-                {
-                  "title": "Buy groceries (updated)",
-                  "description": "Bread, milk, eggs",
-                  "status": "IN_PROGRESS"
-                }
-                """)
-        )
-    )
-    public Mono<TaskDto> update(@PathVariable String id, @org.springframework.web.bind.annotation.RequestBody TaskUpdateRequest req) {
-        return service.update(id, req)
-            .onErrorResume(IllegalArgumentException.class,
-                e -> Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found")));
-    }
+        ) @RequestBody TaskCreateRequest req
+    ) { return service.create(req); }
 
-    @Operation(
-        summary = "Delete a task",
-        description = "Deletes a task by its ID."
-    )
-    @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Task deleted"),
-        @ApiResponse(responseCode = "404", description = "Task not found")
-    })
+    @Operation(summary = "Update task")
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<TaskDto> update(
+        @PathVariable String id,
+        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                examples = @ExampleObject(value = """
+                { "title":"Rapor", "description":"Q3 revize", "status":"IN_PROGRESS", "assigneeId":"u-101" }
+                """)
+            )
+        ) @RequestBody TaskUpdateRequest req
+    ) { return service.update(id, req); }
+
+    @Operation(summary = "Assign task")
+    @PutMapping(value = "/{id}/assignee", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<TaskDto> assign(
+        @PathVariable String id,
+        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                examples = @ExampleObject(value = """
+                { "assigneeId":"u-101" }
+                """)
+            )
+        ) @RequestBody AssigneeRequest body
+    ) { return service.assign(id, body.getAssigneeId()); }
+
+    @Operation(summary = "Unassign task")
+    @DeleteMapping("/{id}/assignee")
+    public Mono<TaskDto> unassign(@PathVariable String id) { return service.unassign(id); }
+
+    @Operation(summary = "Delete task")
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public Mono<Void> delete(@PathVariable String id) {
-        return service.delete(id)
-            .onErrorResume(IllegalArgumentException.class,
-                e -> Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found")));
-    }
+    public Mono<Void> delete(@PathVariable String id) { return service.delete(id); }
 }
