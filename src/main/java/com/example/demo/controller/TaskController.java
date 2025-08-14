@@ -34,7 +34,7 @@ public class TaskController {
             required = true,
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 examples = @ExampleObject(value = """
-                { "title":"Rapor", "description":"Q3", "status":"OPEN", "assigneeId":"u-101" }
+                { "title":"Report", "description":"Q3", "status":"OPEN", "assigneeId":"u-101" }
                 """)
             )
         ) @RequestBody TaskCreateRequest req
@@ -48,7 +48,7 @@ public class TaskController {
             required = true,
             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                 examples = @ExampleObject(value = """
-                { "title":"Rapor", "description":"Q3 revize", "status":"IN_PROGRESS", "assigneeId":"u-101" }
+                { "title":"report", "description":"Q3 updated", "status":"IN_PROGRESS", "assigneeId":"u-101" }
                 """)
             )
         ) @RequestBody TaskUpdateRequest req
