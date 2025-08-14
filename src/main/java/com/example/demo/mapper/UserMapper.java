@@ -14,11 +14,15 @@ public class UserMapper {
         u.setEmail(req.getEmail());
         return u;
     }
+
     public User merge(User u, UserUpdateRequest req) {
-        if (req.getName() != null && !req.getName().isBlank()) u.setName(req.getName());
-        if (req.getEmail() != null && !req.getEmail().isBlank()) u.setEmail(req.getEmail());
+        if (req.getName() != null && !req.getName().isBlank())
+            u.setName(req.getName());
+        if (req.getEmail() != null && !req.getEmail().isBlank())
+            u.setEmail(req.getEmail());
         return u;
     }
+
     public UserDto toDto(User u) {
         UserDto d = new UserDto();
         d.setId(u.getId());

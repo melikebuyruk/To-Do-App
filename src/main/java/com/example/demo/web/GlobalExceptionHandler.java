@@ -16,9 +16,9 @@ import java.time.Instant;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler({
-        IllegalArgumentException.class,
-        ServerWebInputException.class,
-        ConstraintViolationException.class
+            IllegalArgumentException.class,
+            ServerWebInputException.class,
+            ConstraintViolationException.class
     })
     public ProblemDetail handleBadRequest(Exception ex) {
         ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);

@@ -13,17 +13,24 @@ public class TaskMapper {
         Task t = new Task();
         t.setTitle(req.getTitle());
         t.setDescription(req.getDescription());
-        if (req.getStatus() != null) t.setStatus(TaskStatus.valueOf(req.getStatus()));
+        if (req.getStatus() != null)
+            t.setStatus(TaskStatus.valueOf(req.getStatus()));
         t.setAssigneeId(req.getAssigneeId());
         return t;
     }
+
     public Task merge(Task t, TaskUpdateRequest req) {
-        if (req.getTitle() != null && !req.getTitle().isBlank()) t.setTitle(req.getTitle());
-        if (req.getDescription() != null && !req.getDescription().isBlank()) t.setDescription(req.getDescription());
-        if (req.getStatus() != null && !req.getStatus().isBlank()) t.setStatus(TaskStatus.valueOf(req.getStatus()));
-        if (req.getAssigneeId() != null && !req.getAssigneeId().isBlank()) t.setAssigneeId(req.getAssigneeId());
+        if (req.getTitle() != null && !req.getTitle().isBlank())
+            t.setTitle(req.getTitle());
+        if (req.getDescription() != null && !req.getDescription().isBlank())
+            t.setDescription(req.getDescription());
+        if (req.getStatus() != null && !req.getStatus().isBlank())
+            t.setStatus(TaskStatus.valueOf(req.getStatus()));
+        if (req.getAssigneeId() != null && !req.getAssigneeId().isBlank())
+            t.setAssigneeId(req.getAssigneeId());
         return t;
     }
+
     public TaskDto toDto(Task t) {
         TaskDto d = new TaskDto();
         d.setId(t.getId());

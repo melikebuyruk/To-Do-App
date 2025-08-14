@@ -8,7 +8,8 @@ import java.util.Locale;
 public class TaskAppApplication {
 
   public static void main(String[] args) {
-    Locale.setDefault(Locale.US); 
+    Locale.setDefault(Locale.US);
     SpringApplication.run(TaskAppApplication.class, args);
   }
+
 }

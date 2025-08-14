@@ -54,15 +54,15 @@ class UserControllerTest {
         Mockito.when(userService.list()).thenReturn(Flux.just(u1, u2));
 
         webTestClient.get()
-            .uri("/users")
-            .accept(MediaType.APPLICATION_JSON)
-            .exchange()
-            .expectStatus().isOk()
-            .expectHeader().contentTypeCompatibleWith(MediaType.APPLICATION_JSON)
-            .expectBody()
-            .jsonPath("$[0].id").isEqualTo("u1")
-            .jsonPath("$[0].taskIds[0]").isEqualTo("t1")
-            .jsonPath("$[1].id").isEqualTo("u2");
+                .uri("/users")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentTypeCompatibleWith(MediaType.APPLICATION_JSON)
+                .expectBody()
+                .jsonPath("$[0].id").isEqualTo("u1")
+                .jsonPath("$[0].taskIds[0]").isEqualTo("t1")
+                .jsonPath("$[1].id").isEqualTo("u2");
     }
 
     @Test
@@ -71,14 +71,14 @@ class UserControllerTest {
         Mockito.when(userService.get("u1")).thenReturn(Mono.just(u1));
 
         webTestClient.get()
-            .uri("/users/{id}", "u1")
-            .accept(MediaType.APPLICATION_JSON)
-            .exchange()
-            .expectStatus().isOk()
-            .expectBody()
-            .jsonPath("$.id").isEqualTo("u1")
-            .jsonPath("$.name").isEqualTo("Ada Lovelace")
-            .jsonPath("$.taskIds[1]").isEqualTo("t2");
+                .uri("/users/{id}", "u1")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.id").isEqualTo("u1")
+                .jsonPath("$.name").isEqualTo("Ada Lovelace")
+                .jsonPath("$.taskIds[1]").isEqualTo("t2");
     }
 
     @Test
@@ -87,19 +87,19 @@ class UserControllerTest {
         Mockito.when(userService.create(any(UserCreateRequest.class))).thenReturn(Mono.just(u1));
 
         String body = """
-            { "name": "Ada Lovelace", "email": "ada@example.com" }
-            """;
+                { "name": "Ada Lovelace", "email": "ada@example.com" }
+                """;
 
         webTestClient.post()
-            .uri("/users")
-            .contentType(MediaType.APPLICATION_JSON)
-            .accept(MediaType.APPLICATION_JSON)
-            .bodyValue(body)
-            .exchange()
-            .expectStatus().isOk()
-            .expectBody()
-            .jsonPath("$.id").isEqualTo("u1")
-            .jsonPath("$.email").isEqualTo("ada@example.com");
+                .uri("/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(body)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.id").isEqualTo("u1")
+                .jsonPath("$.email").isEqualTo("ada@example.com");
     }
 
     @Test
@@ -108,19 +108,19 @@ class UserControllerTest {
         Mockito.when(userService.update(eq("u2"), any(UserUpdateRequest.class))).thenReturn(Mono.just(u2));
 
         String body = """
-            { "name": "Grace H.", "email": "grace@example.com" }
-            """;
+                { "name": "Grace H.", "email": "grace@example.com" }
+                """;
 
         webTestClient.put()
-            .uri("/users/{id}", "u2")
-            .contentType(MediaType.APPLICATION_JSON)
-            .accept(MediaType.APPLICATION_JSON)
-            .bodyValue(body)
-            .exchange()
-            .expectStatus().isOk()
-            .expectBody()
-            .jsonPath("$.id").isEqualTo("u2")
-            .jsonPath("$.name").isEqualTo("Grace Hopper");
+                .uri("/users/{id}", "u2")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .bodyValue(body)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.id").isEqualTo("u2")
+                .jsonPath("$.name").isEqualTo("Grace Hopper");
     }
 
     @Test
@@ -129,9 +129,9 @@ class UserControllerTest {
         Mockito.when(userService.delete("u1")).thenReturn(Mono.empty());
 
         webTestClient.delete()
-            .uri("/users/{id}", "u1")
-            .exchange()
-            .expectStatus().isOk()
-            .expectBody().isEmpty();
+                .uri("/users/{id}", "u1")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
     }
 }

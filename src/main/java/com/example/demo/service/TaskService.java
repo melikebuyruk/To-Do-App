@@ -61,14 +61,20 @@ public class TaskService {
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "user")))
                 .then(tasks.findById(taskId)
                         .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "task"))))
-                .flatMap(t -> { t.setAssigneeId(assigneeId); return tasks.save(t); })
+                .flatMap(t -> {
+                    t.setAssigneeId(assigneeId);
+                    return tasks.save(t);
+                })
                 .map(mapper::toDto);
     }
 
     public Mono<TaskDto> unassign(String taskId) {
         return tasks.findById(taskId)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
-                .flatMap(t -> { t.setAssigneeId(null); return tasks.save(t); })
+                .flatMap(t -> {
+                    t.setAssigneeId(null);
+                    return tasks.save(t);
+                })
                 .map(mapper::toDto);
     }
 }
