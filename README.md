@@ -15,7 +15,7 @@ A simple Spring Boot REST API for managing users and tasks.
 - Spring Data JPA
 - H2 Database (in-memory)
 - Gradle
-- Docker (optional)
+- Docker
 
 ## Getting Started
 
@@ -65,4 +65,67 @@ Run with Gradle
 | DELETE | `/tasks/{id}`        | Delete task            |
 | PUT    | `/tasks/{id}/assign` | Assign task to a user  |
 | PUT    | `/tasks/{id}/status` | Change task status     |
+
+### Tasks (Asynchronous — `CompletableFuture`)
+
+| Method | Endpoint                                                          | Description                       |
+|--------|--------------------------------------------------------------------|-----------------------------------|
+| PUT    | `/tasks/{id}/assign-async`                                         | Assign task to a user (async)     |
+| PUT    | `/tasks/{id}/unassign-async`                                       | Unassign task (async)             |
+
+
+## Technical Requirements
+
+- **Reactive controller (Spring WebFlux)**  
+  → `TaskController` returns `Flux` / `Mono` and wraps async with `Mono.fromFuture(...)`.
+
+- **Controller unit tests**  
+  → `src/test/java/.../TaskControllerTest.java`, `UserControllerTest.java`
+
+- **Automatic API documentation (Springdoc / OpenAPI / Swagger)**  
+  → Annotations: `@Operation`, `@ApiResponse`, `@Schema`  
+  → Swagger UI: `http://localhost:8080/swagger-ui/index.html`  
+  → OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+
+- **Data persistence layer**  
+  → Repositories: `TaskRepository.java`, `UserRepository.java`  
+  → Entities/DTO/Mapper structure in place.
+
+---
+
+## Guidance Items
+
+- **Readable code & best practices**  
+  → Clear separation between Controller / Service / DTO / Mapper / Repository layers.
+
+- **Error handling & correct HTTP codes**  
+  → `GlobalExceptionHandler.java` for global error handling.  
+  → `ResponseStatusException` used for 404/400 cases.  
+
+- **DTO pattern**  
+  → `TaskDto.java`, `UserDto.java`  
+  → `TaskMapper.java`, `UserMapper.java` (Entity ↔ DTO conversion)
+
+- **Automated docs with request/response examples**  
+  → OpenAPI annotations and `@ExampleObject` usage in controllers.
+
+---
+
+## Additional Features
+
+### User entity & one-to-many relation (User ↔ Tasks) + assignment
+- `User.java`, `Task.java` (assignee/assigneeId field linking)
+- Endpoints:
+  - `PUT /tasks/{id}/assignee` (assign, reactive)
+  - `DELETE /tasks/{id}/assignee` (unassign, reactive)
+
+### Asynchronous long-running operations (CompletableFuture)
+- In `TaskService`:
+  - `assignAsync(String taskId, String assigneeId)`
+  - `unassignAsync(String taskId)`
+- Controller endpoints:
+  - `PUT /tasks/{id}/assign-async`
+  - `PUT /tasks/{id}/unassign-async`
+
+
 
