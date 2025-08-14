@@ -8,6 +8,8 @@ import com.example.demo.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import java.util.concurrent.CompletableFuture;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
@@ -74,4 +76,22 @@ public class TaskController {
     public Mono<Void> delete(@PathVariable String id) {
         return service.delete(id);
     }
+
+    @Operation(summary = "Assign a task to user async ")
+    @ApiResponse(responseCode = "200", description = "Assigned")
+    @ApiResponse(responseCode = "404", description = "Task or user not found")
+    @PutMapping("/{id}/assign-async")
+    public Mono<TaskDto> assignAsync(@PathVariable String id, @RequestBody AssigneeRequest req) {
+        CompletableFuture<TaskDto> cf = service.assignAsync(id, req.getAssigneeId());
+        return Mono.fromFuture(cf);
+    }
+
+    @Operation(summary = "Unassign task async")
+    @ApiResponse(responseCode = "200", description = "Unassigned")
+    @ApiResponse(responseCode = "404", description = "Task not found")
+    @PutMapping("/{id}/unassign-async")
+    public Mono<TaskDto> unassignAsync(@PathVariable String id) {
+        return Mono.fromFuture(service.unassignAsync(id));
+    }
+
 }
